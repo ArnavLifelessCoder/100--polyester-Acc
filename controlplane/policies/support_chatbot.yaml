@@ -1,0 +1,42 @@
+workflow_id: support_chatbot
+version: v1
+jurisdiction: IN
+consequence:
+  performance: 3000
+  cost: 400
+  responsibility: 3000
+irreversibility: 0.6
+latency_budget_ms: 800
+intervention_mode: buffered
+fail_mode: open
+prior:
+  performance: 0.015
+  cost: 0.006
+  responsibility: 0.004
+kappa:
+  "performance|responsibility": 0.4
+  "performance|cost": 0.9
+  "cost|responsibility": 0.9
+lam: 0.3
+stage: enforcing
+routing:
+  q1: 0.08
+  q2: 0.015
+friction:
+  ALLOW: 0
+  HOLD: 5
+  CONSTRAIN: 15
+  ESCALATE: 120
+  BLOCK: 50
+utility_loss:
+  ALLOW: 0
+  HOLD: 20
+  CONSTRAIN: 80
+  ESCALATE: 40        # A6a -- review delays a response, it does not destroy it
+  BLOCK: 200
+residual:
+  ALLOW: 1.0
+  HOLD: 0.5
+  CONSTRAIN: 0.3
+  ESCALATE: 0.1
+  BLOCK: 0.0
