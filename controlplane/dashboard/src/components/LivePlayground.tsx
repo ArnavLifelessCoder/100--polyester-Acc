@@ -19,6 +19,7 @@ export const LivePlayground: React.FC = () => {
     'Credit Policy: Maximum credit limit for income bracket is ₹1,50,000 unless explicit branch manager sign-off is attached.'
   );
   const [loading, setLoading] = useState<boolean>(false);
+  const [fileNote, setFileNote] = useState<string>('');
   const [result, setResult] = useState<any | null>(null);
 
   const presets = [
@@ -150,16 +151,49 @@ export const LivePlayground: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-              RAG / Retrieval Context (Leave empty to test Abstention):
-            </label>
+            <div className="flex items-center justify-between mb-1.5 gap-2 flex-wrap">
+              <label className="block text-xs font-semibold text-stone-700">
+                Source document (leave empty to test abstention):
+              </label>
+              {/* Read entirely in the browser. The file is never uploaded; only
+                  the text the user can see in the box is ever sent, which keeps
+                  a reviewer's own document off the server. */}
+              <label className="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 cursor-pointer hover:bg-amber-100 transition">
+                Load a .txt or .md file
+                <input
+                  type="file"
+                  accept=".txt,.md,.markdown,text/plain,text/markdown"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 200_000) {
+                      setFileNote('That file is over 200KB. Paste the relevant passage instead.');
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      setRetrievalContext(String(reader.result || '').slice(0, 20000));
+                      setFileNote(`Loaded ${file.name}`);
+                    };
+                    reader.onerror = () => setFileNote(`Could not read ${file.name}`);
+                    reader.readAsText(file);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            </div>
             <textarea
-              rows={2}
+              rows={4}
               value={retrievalContext}
-              onChange={(e) => setRetrievalContext(e.target.value)}
-              placeholder="Ground truth context..."
+              onChange={(e) => { setRetrievalContext(e.target.value); setFileNote(''); }}
+              placeholder="Paste the policy or document the answer should be checked against, or load a file."
               className="w-full bg-[#FAF6EE] border border-[#E2D8C6] rounded-lg p-2.5 text-xs text-stone-800 focus:border-amber-600 focus:outline-none"
             />
+            <div className="flex items-center justify-between mt-1 text-[11px] text-stone-500">
+              <span>{fileNote}</span>
+              <span className="font-mono">{retrievalContext.length.toLocaleString()} chars</span>
+            </div>
           </div>
 
           <button

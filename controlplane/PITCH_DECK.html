@@ -1,0 +1,725 @@
+<title>ControlPlane Pitch Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Spectral:wght@400;600;700&display=swap">
+
+<style>
+  /* Deliberately single-theme. A pitch deck is projected and printed, and a
+     dark variant of a consulting layout reads as a different document. Every
+     colour is painted explicitly so the page holds on any host ground. */
+  :root {
+    --paper:      #F4F6F8;
+    --slide:      #FFFFFF;
+    --panel:      #EEF2F6;
+    --panel-warm: #FAF6EF;
+    --ink:        #101720;
+    --ink-2:      #33404F;
+    --muted:      #64717F;
+    --rule:       #D9E0E7;
+    --rule-2:     #E9EDF1;
+    --blue:       #1F4B73;
+    --blue-soft:  #E3ECF4;
+    --brass:      #A8702E;
+    --brass-soft: #FAF0E2;
+    --green:      #1B6F52;
+    --green-soft: #E3F0EA;
+    --amber:      #9C5D0B;
+    --amber-soft: #FBEEDA;
+    --red:        #9E2B2B;
+    --red-soft:   #F7E5E5;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    padding: 28px 20px 60px;
+  }
+
+  .deck { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+
+  .slide {
+    background: var(--slide);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 46px 54px 50px;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(16,23,32,.04), 0 14px 34px -28px rgba(16,23,32,.35);
+  }
+
+  /* Header rail: section label left, slide number right. */
+  .rail {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 16px; padding-bottom: 12px; margin-bottom: 26px;
+    border-bottom: 1px solid var(--rule-2);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10.5px; letter-spacing: .15em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .rail .n { color: var(--blue); font-weight: 600; }
+
+  h1 {
+    font-family: Spectral, Georgia, serif;
+    font-size: clamp(40px, 5.4vw, 62px); font-weight: 700;
+    line-height: 1.03; letter-spacing: -.022em; margin: 0 0 18px; text-wrap: balance;
+  }
+  h2 {
+    font-family: Spectral, Georgia, serif;
+    font-size: clamp(26px, 3.2vw, 36px); font-weight: 600;
+    line-height: 1.14; letter-spacing: -.016em; margin: 0 0 8px; text-wrap: balance;
+  }
+  .kicker {
+    font-size: 16px; color: var(--ink-2); margin: 0 0 26px; max-width: 74ch;
+  }
+  h3 {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10.5px; font-weight: 600; letter-spacing: .15em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 12px;
+  }
+  p { margin: 0 0 13px; }
+  .tight p:last-child { margin-bottom: 0; }
+  strong { font-weight: 600; }
+  .mono { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; }
+
+  /* Grids */
+  .cols  { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 26px 34px; }
+  .cols3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 18px; }
+  .split { display: grid; grid-template-columns: 1.15fr .85fr; gap: 38px; align-items: start; }
+  @media (max-width: 820px) { .split { grid-template-columns: 1fr; gap: 26px; } .slide { padding: 32px 26px 36px; } }
+
+  /* Tables */
+  .scroll { overflow-x: auto; margin: 4px 0 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { padding: 9px 14px; text-align: left; border-bottom: 1px solid var(--rule-2); }
+  thead th {
+    font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 500;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+    border-bottom: 1px solid var(--rule); white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  .r { text-align: right; font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.tot td { font-weight: 600; background: var(--panel); border-top: 1px solid var(--rule); }
+  tr.hot td { background: var(--red-soft); }
+  tr.hot td:first-child { box-shadow: inset 3px 0 0 var(--red); }
+
+  /* Stat blocks */
+  .stat { border-left: 3px solid var(--blue); padding: 2px 0 2px 16px; }
+  .stat b {
+    display: block; font-family: "IBM Plex Mono", monospace;
+    font-size: 30px; font-weight: 500; letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums; line-height: 1.1; margin-bottom: 3px;
+  }
+  .stat span { font-size: 12.5px; color: var(--muted); line-height: 1.4; display: block; }
+  .stat.brass { border-left-color: var(--brass); } .stat.brass b { color: var(--brass); }
+  .stat.green { border-left-color: var(--green); } .stat.green b { color: var(--green); }
+  .stat.red   { border-left-color: var(--red);   } .stat.red b   { color: var(--red); }
+
+  /* Panels */
+  .panel {
+    background: var(--panel); border: 1px solid var(--rule);
+    border-radius: 3px; padding: 20px 22px;
+  }
+  .panel.warm { background: var(--panel-warm); border-color: #EADFCB; }
+  .panel.blue { background: var(--blue-soft); border-color: #C9DCEB; }
+  .panel.red  { background: var(--red-soft);  border-color: #E7C4C4; }
+  .panel.green{ background: var(--green-soft);border-color: #C2DED2; }
+
+  .formula {
+    font-family: "IBM Plex Mono", monospace; font-size: 14px; line-height: 1.9;
+    white-space: pre; overflow-x: auto; margin: 0; color: var(--ink);
+  }
+  .formula i { color: var(--muted); font-style: normal; }
+
+  ul { margin: 0 0 13px; padding-left: 19px; }
+  li { margin-bottom: 8px; }
+  li::marker { color: var(--muted); }
+
+  /* Labelled list used for "why current approaches fail" */
+  .fails { display: grid; gap: 14px; }
+  .fail { display: grid; grid-template-columns: 30px 1fr; gap: 14px; align-items: start; }
+  .fail .x {
+    width: 22px; height: 22px; border-radius: 2px; background: var(--red-soft);
+    border: 1px solid var(--red); color: var(--red);
+    display: flex; align-items: center; justify-content: center;
+    font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 600;
+  }
+  .fail b { display: block; margin-bottom: 2px; }
+  .fail span { color: var(--ink-2); font-size: 14px; }
+
+  /* Action spectrum strip */
+  .spectrum { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 6px; }
+  .act { border: 1px solid var(--rule); border-radius: 3px; padding: 13px 14px; background: var(--slide); }
+  .act .name {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600;
+    letter-spacing: .1em; margin-bottom: 6px;
+  }
+  .act .desc { font-size: 12px; color: var(--muted); line-height: 1.4; min-height: 34px; }
+  .act .vals {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--ink-2);
+    margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--rule-2);
+    font-variant-numeric: tabular-nums;
+  }
+  .act.a0 { border-top: 3px solid var(--green); } .act.a0 .name { color: var(--green); }
+  .act.a1 { border-top: 3px solid #C79A3E; }     .act.a1 .name { color: var(--brass); }
+  .act.a2 { border-top: 3px solid var(--blue); }  .act.a2 .name { color: var(--blue); }
+  .act.a3 { border-top: 3px solid #6B4E9E; }      .act.a3 .name { color: #5A4088; }
+  .act.a4 { border-top: 3px solid var(--red); }   .act.a4 .name { color: var(--red); }
+  @media (max-width: 820px) { .spectrum { grid-template-columns: repeat(2, 1fr); } }
+
+  /* Verdict pills */
+  .pill {
+    display: inline-block; font-family: "IBM Plex Mono", monospace;
+    font-size: 11px; font-weight: 600; letter-spacing: .09em;
+    padding: 3px 9px; border-radius: 2px; border: 1px solid;
+  }
+  .pill.allow    { color: var(--green); background: var(--green-soft); border-color: #B6D6C7; }
+  .pill.hold     { color: var(--brass); background: var(--brass-soft); border-color: #E4CDA6; }
+  .pill.constrain{ color: var(--blue);  background: var(--blue-soft);  border-color: #C2D8E9; }
+  .pill.escalate { color: #5A4088; background: #EFE9F7; border-color: #D3C6E8; }
+  .pill.block    { color: var(--red);   background: var(--red-soft);   border-color: #E5BFBF; }
+
+  /* Three-verdict comparison */
+  .verdicts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 820px) { .verdicts { grid-template-columns: 1fr; } }
+  .vcard { border: 1px solid var(--rule); border-radius: 3px; padding: 16px 18px; background: var(--slide); }
+  .vcard .wf { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+  .vcard .cq { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--muted); margin-bottom: 12px; }
+  .vcard .out { padding-top: 11px; border-top: 1px solid var(--rule-2); }
+  .vcard .note { font-size: 11.5px; color: var(--muted); margin-top: 7px; line-height: 1.4; }
+
+  /* Claim rows for the catch slide */
+  .claim {
+    border-radius: 3px; padding: 10px 13px; font-size: 13px; margin-bottom: 8px;
+    border: 1px solid;
+  }
+  .claim.bad  { background: var(--red-soft); border-color: #E7C4C4; }
+  .claim.ok   { background: var(--green-soft); border-color: #C2DED2; }
+  .claim .tag {
+    font-family: "IBM Plex Mono", monospace; font-size: 9.5px; font-weight: 600;
+    letter-spacing: .12em; text-transform: uppercase; display: block; margin-bottom: 3px;
+  }
+  .claim.bad .tag { color: var(--red); } .claim.ok .tag { color: var(--green); }
+
+  /* Gate meter */
+  .meter { margin-top: 14px; }
+  .meter .bar {
+    height: 26px; border-radius: 2px; background: var(--panel);
+    border: 1px solid var(--rule); position: relative; overflow: hidden;
+  }
+  .meter .fill { position: absolute; inset: 0 auto 0 0; background: var(--red); opacity: .82; }
+  .meter .gate {
+    position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--ink);
+  }
+  .meter .labels {
+    display: flex; justify-content: space-between; margin-top: 6px;
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--muted);
+  }
+
+  /* Stage ladder */
+  .ladder { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .stg { flex: 1 1 130px; border: 1px solid var(--rule); border-radius: 2px; padding: 10px 13px; background: var(--panel); }
+  .stg b { display: block; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 3px; }
+  .stg span { font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+  .stg.on  { background: var(--green-soft); border-color: #B6D6C7; } .stg.on b  { color: var(--green); }
+  .stg.off { background: var(--red-soft);   border-color: #E5BFBF; } .stg.off b { color: var(--red); }
+
+  /* Roadmap */
+  .phases { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  @media (max-width: 900px) { .phases { grid-template-columns: repeat(2, 1fr); } }
+  .ph { border: 1px solid var(--rule); border-radius: 3px; padding: 14px 15px; background: var(--slide); border-top: 3px solid var(--blue); }
+  .ph .no { font-family: "IBM Plex Mono", monospace; font-size: 22px; color: var(--blue); line-height: 1; margin-bottom: 5px; }
+  .ph .wk { font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
+  .ph b { display: block; font-size: 13.5px; margin-bottom: 5px; }
+  .ph span { font-size: 12px; color: var(--ink-2); line-height: 1.45; }
+  .ph .exit { display: block; margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--rule-2); font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--blue); }
+
+  /* Build status */
+  .built { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+  .bcard { border: 1px solid var(--rule); border-radius: 3px; padding: 15px 17px; }
+  .bcard h4 { margin: 0 0 8px; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; }
+  .bcard p { font-size: 12.5px; color: var(--ink-2); line-height: 1.5; margin: 0; }
+  .bcard.y { border-top: 3px solid var(--green); } .bcard.y h4 { color: var(--green); }
+  .bcard.n { border-top: 3px solid var(--muted); } .bcard.n h4 { color: var(--muted); }
+  .bcard.o { border-top: 3px solid var(--amber); } .bcard.o h4 { color: var(--amber); }
+
+  .footnote { font-size: 11.5px; color: var(--muted); margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--rule-2); }
+  .chip {
+    display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 10px;
+    letter-spacing: .1em; text-transform: uppercase; padding: 2px 6px; border-radius: 2px;
+    background: var(--amber-soft); color: var(--amber); border: 1px solid var(--amber); font-weight: 600;
+  }
+
+  /* ---- Print and PDF export ----
+     One slide per page, landscape. Browser "Save as PDF" with background
+     graphics enabled produces a deck that matches the screen. */
+  @page { size: A4 landscape; margin: 10mm; }
+  @media print {
+    body { background: #FFFFFF; padding: 0; font-size: 12.5px; }
+    .deck { max-width: none; gap: 0; }
+    .slide {
+      break-inside: avoid; page-break-inside: avoid;
+      break-after: page; page-break-after: always;
+      border: none; box-shadow: none; border-radius: 0;
+      padding: 14mm 16mm; min-height: 0;
+    }
+    .slide:last-child { break-after: auto; page-break-after: auto; }
+    h1 { font-size: 40px; }
+    h2 { font-size: 25px; }
+    .kicker { font-size: 14px; }
+    .stat b { font-size: 24px; }
+    /* Keep the panels readable on paper and in a printed handout. */
+    .panel, .act, .vcard, .ph, .bcard, .claim, .stg { break-inside: avoid; }
+    a { text-decoration: none; color: inherit; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="deck">
+
+  <!-- 1 TITLE -->
+  <section class="slide">
+    <div class="rail"><span>Accenture Innovation Challenge / Round 2 / Track 1</span><span class="n">01</span></div>
+    <h1>ControlPlane.ai</h1>
+    <p class="kicker" style="font-size:19px;max-width:66ch">
+      Enterprises do not run one AI system. They run several, and a mistake in each
+      one costs a different amount. We built the layer that prices that difference
+      and acts on it.
+    </p>
+    <div class="cols3" style="margin-top:34px">
+      <div class="stat"><b>&#8377;8.2 cr</b><span>Annual residual exposure addressed, at 130k interactions per month</span></div>
+      <div class="stat brass"><b>98%</b><span>Fewer unnecessary interventions after calibration, measured</span></div>
+      <div class="stat green"><b>221</b><span>Automated tests. Every demo screen asserts its own claim</span></div>
+    </div>
+  </section>
+
+  <!-- 2 PROBLEM -->
+  <section class="slide">
+    <div class="rail"><span>The problem</span><span class="n">02</span></div>
+    <h2>The same mistake costs &#8377;800 in one workflow and &#8377;50,000 in another</h2>
+    <p class="kicker">A support assistant, an internal copilot, and a decision support tool differ by
+      far more than tone. Using this challenge's own reference parameters:</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Workflow</th><th class="r">Volume / mo</th><th class="r">Defect rate</th><th class="r">Acted on</th><th class="r">Cost per defect</th><th class="r">Exposure / mo</th></tr></thead>
+        <tbody>
+          <tr><td>Support chatbot</td><td class="r">70,000</td><td class="r">2.5%</td><td class="r">40%</td><td class="r">&#8377;3,000</td><td class="r">&#8377;12,60,000</td></tr>
+          <tr><td>Internal copilot</td><td class="r">45,000</td><td class="r">3.0%</td><td class="r">25%</td><td class="r">&#8377;800</td><td class="r">&#8377;54,000</td></tr>
+          <tr class="hot"><td>Decision support</td><td class="r">15,000</td><td class="r">1.5%</td><td class="r">60%</td><td class="r">&#8377;50,000</td><td class="r">&#8377;60,75,000</td></tr>
+          <tr class="tot"><td>Total</td><td class="r">130,000</td><td class="r"></td><td class="r"></td><td class="r"></td><td class="r">&#8377;73,89,000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="split" style="margin-top:26px">
+      <div class="panel red tight">
+        <h3 style="color:var(--red)">The line that decides the architecture</h3>
+        <p style="font-size:15px"><strong>Decision support is 11% of traffic and 82% of exposure.</strong>
+        The copilot is 35% of traffic and under 1%. Any system that applies one
+        threshold to both is wrong about one of them, by construction.</p>
+      </div>
+      <div class="tight">
+        <h3>After sampled review</h3>
+        <div class="stat red" style="margin-bottom:14px"><b>&#8377;67,97,880</b><span>Residual exposure per month. Human review at an 8% catch rate leaves this behind</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 WHY CURRENT APPROACHES FAIL -->
+  <section class="slide">
+    <div class="rail"><span>Why today's guardrails do not solve it</span><span class="n">03</span></div>
+    <h2>Five failures, and they are structural rather than incidental</h2>
+    <div class="cols" style="margin-top:22px">
+      <div class="fails">
+        <div class="fail"><div class="x">1</div><div><b>One global threshold cannot serve both</b><span>Set it where the copilot is comfortable and decision support leaks. Set it where decision support is safe and the copilot drowns in false alarms.</span></div></div>
+        <div class="fail"><div class="x">2</div><div><b>Binary blocking destroys utility</b><span>A pass or fail filter has exactly one response to uncertainty, and it is the most expensive one available.</span></div></div>
+        <div class="fail"><div class="x">3</div><div><b>Post-hoc observability is late</b><span>The signal arrives after the refund was issued. Retraction costs more than prevention.</span></div></div>
+      </div>
+      <div class="fails">
+        <div class="fail"><div class="x">4</div><div><b>Risks overlap and resist categories</b><span>A fabricated detail about a named person is a hallucination and a privacy incident at once. Counting it once understates it.</span></div></div>
+        <div class="fail"><div class="x">5</div><div><b>No ground truth at request time</b><span>The gaps that cause hallucination make verification hard. Systems that read "could not verify" as "verified fine" fail silently and confidently.</span></div></div>
+        <div class="panel warm tight" style="margin-top:4px">
+          <p style="font-size:13.5px;margin:0"><strong>Every team that ships a guardrail finds problem 1</strong>, then hand-tunes the
+          threshold forever. That tuning is the job we automate.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 THE IDEA -->
+  <section class="slide">
+    <div class="rail"><span>The mechanism</span><span class="n">04</span></div>
+    <h2>Treat every model output as a proposal to adjudicate, not an artifact to observe</h2>
+    <p class="kicker">For each response we estimate the probability it is defective and what a defect
+      costs <strong>in this specific workflow</strong>, then take the action that minimises expected loss.</p>
+    <div class="panel blue" style="margin-bottom:22px">
+      <p class="formula">L(a) = &#961;(a) &#183; P_eff &#183; C_eff &#183; &#953;   +   F(a)   +   (1 &#8722; P_eff) &#183; U(a)
+<i>       residual risk left behind     friction    utility destroyed by
+                                                a false alarm</i></p>
+    </div>
+    <div class="cols3">
+      <div class="tight"><h3>P_eff</h3><p style="font-size:13.5px">Defect probability, including risk carried from earlier turns in the conversation.</p></div>
+      <div class="tight"><h3>C_eff &#183; &#953;</h3><p style="font-size:13.5px">What a defect costs here, discounted by how reversible the action is.</p></div>
+      <div class="tight"><h3>F(a), U(a)</h3><p style="font-size:13.5px">What the intervention costs to run, and what it destroys when the response was fine.</p></div>
+    </div>
+    <p class="footnote">The action taken is the argmin over five graded options. Detection is an input to this
+      function, not the product. That is the distinction the whole submission rests on.</p>
+  </section>
+
+  <!-- 5 SPECTRUM -->
+  <section class="slide">
+    <div class="rail"><span>The action spectrum</span><span class="n">05</span></div>
+    <h2>Five graded actions, because uncertainty deserves more than one response</h2>
+    <div class="spectrum">
+      <div class="act a0"><div class="name">ALLOW</div><div class="desc">Deliver as-is</div><div class="vals">&#961; 1.0<br>F &#8377;0 &#183; U 0</div></div>
+      <div class="act a1"><div class="name">HOLD</div><div class="desc">Deliver, queue for batch review</div><div class="vals">&#961; 0.5<br>F &#8377;5 &#183; U 20</div></div>
+      <div class="act a2"><div class="name">CONSTRAIN</div><div class="desc">Re-prompt under a narrower contract</div><div class="vals">&#961; 0.3<br>F &#8377;15 &#183; U 80</div></div>
+      <div class="act a3"><div class="name">ESCALATE</div><div class="desc">Route to a human before delivery</div><div class="vals">&#961; 0.1<br>F &#8377;120 &#183; U 40</div></div>
+      <div class="act a4"><div class="name">BLOCK</div><div class="desc">Drop, return policy fallback</div><div class="vals">&#961; 0.0<br>F &#8377;50 &#183; U 200</div></div>
+    </div>
+    <div class="panel warm" style="margin-top:24px">
+      <h3 style="color:var(--brass)">A correction worth stating out loud</h3>
+      <p style="margin:0;font-size:14px">Our first model priced escalation and blocking at the same utility loss. That makes
+      <span class="mono">L(ESCALATE) &#8722; L(BLOCK) = 0.1&#183;p&#183;C&#183;&#953; + 70</span>, positive at every probability, so
+      <strong>BLOCK dominates ESCALATE everywhere and the argmin can never route to a human.</strong>
+      A seeded run of 3,011 decisions contained zero escalations. Review delays a response;
+      a block destroys it. Pricing them alike removes the human tier entirely.</p>
+    </div>
+  </section>
+
+  <!-- 6 DERIVED THRESHOLDS -->
+  <section class="slide">
+    <div class="rail"><span>Derived, not tuned</span><span class="n">06</span></div>
+    <h2>Nobody chose these numbers</h2>
+    <p class="kicker">Because the loss function is linear in probability, each workflow's switching points
+      fall out of its own consequence model. Change the cost of a mistake and the thresholds move by themselves.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Workflow</th><th class="r">First HOLD</th><th class="r">First CONSTRAIN</th><th class="r">First ESCALATE</th><th class="r">First BLOCK</th></tr></thead>
+        <tbody>
+          <tr><td>Decision support</td><td class="r">0.0011</td><td class="r" style="color:var(--muted)">never</td><td class="r">0.0075</td><td class="r">0.0193</td></tr>
+          <tr><td>Support chatbot</td><td class="r">0.0272</td><td class="r">0.1667</td><td class="r">0.2031</td><td class="r">0.2647</td></tr>
+          <tr><td>Internal copilot</td><td class="r">0.2500</td><td class="r">0.7609</td><td class="r" style="color:var(--muted)">never</td><td class="r">0.9226</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="split" style="margin-top:24px">
+      <div class="panel tight">
+        <h3>Read the copilot row</h3>
+        <p style="font-size:14px;margin:0">It never escalates at any probability, because a &#8377;120 human review does not pay
+        against an &#8377;800 consequence discounted by &#953;&#8202;=&#8202;0.2. That is the consequence model
+        working, not a gap in coverage.</p>
+      </div>
+      <div class="panel tight">
+        <h3>Read the decision support row</h3>
+        <p style="font-size:14px;margin:0">It holds at a defect probability of 0.11%, roughly 230 times more cautious than the
+        copilot. Same engine, same code path, no branching on workflow name anywhere.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 DEMO: THREE VERDICTS -->
+  <section class="slide">
+    <div class="rail"><span>Demonstration 1 / Screen 1</span><span class="n">07</span></div>
+    <h2>One response, one risk vector, three different verdicts</h2>
+    <p class="kicker">The cascade runs once. All three columns adjudicate byte-identical detector output at
+      <span class="mono">P_def&#8202;=&#8202;0.127</span>. The only thing that varies is what a mistake costs.</p>
+    <div class="verdicts">
+      <div class="vcard">
+        <div class="wf">Internal copilot</div>
+        <div class="cq">C_eff &#8377;800 &#183; &#953; 0.2</div>
+        <div class="out"><span class="pill allow">ALLOW</span></div>
+        <div class="note">Below the 0.25 band. The response ships untouched.</div>
+      </div>
+      <div class="vcard">
+        <div class="wf">Support chatbot</div>
+        <div class="cq">C_eff &#8377;3,000 &#183; &#953; 0.6</div>
+        <div class="out"><span class="pill hold">HOLD</span></div>
+        <div class="note">Delivered, queued for batch review. Friction &#8377;5.</div>
+      </div>
+      <div class="vcard" style="border-color:#C9B6D8">
+        <div class="wf">Decision support</div>
+        <div class="cq">C_eff &#8377;50,000 &#183; &#953; 0.9</div>
+        <div class="out"><span class="pill escalate">ESCALATE</span></div>
+        <div class="note"><strong>The engine wanted BLOCK.</strong> The precision cap refused, because the evidence does not support silencing the model.</div>
+      </div>
+    </div>
+    <p class="footnote">That last cell is the product in one line. Expected-loss minimisation asked to block;
+      a detector at 82% measured precision is not permitted to, so the system asks a human instead.</p>
+  </section>
+
+  <!-- 8 THE CATCH -->
+  <section class="slide">
+    <div class="rail"><span>Demonstration 2 / Screen 0</span><span class="n">08</span></div>
+    <h2>A real model gets it wrong, and we name the sentence</h2>
+    <div class="split">
+      <div>
+        <h3>Source document supplied to the model</h3>
+        <div class="panel tight" style="margin-bottom:16px"><p style="font-size:13px;margin:0;color:var(--ink-2)">
+          Refund policy. Orders may be refunded within 30 days of delivery. The item must be
+          unused to qualify. Refunds are issued to the original payment method. Requests are
+          processed within five working days.</p></div>
+        <h3>What the model answered</h3>
+        <div class="panel warm tight"><p style="font-size:13px;margin:0">
+          "Yes, the customer is eligible for a refund since the jacket is unused and they have
+          the receipt. Refunds are issued to the original payment method. The money will arrive
+          in their account within 24 hours, and we will refund the shipping charges as well."</p></div>
+      </div>
+      <div>
+        <h3>Claim-by-claim entailment</h3>
+        <div class="claim bad"><span class="tag">Refuted by source</span>Eligible for a refund, 40 days after delivery</div>
+        <div class="claim ok"><span class="tag">Entailed</span>Refunds go to the original payment method</div>
+        <div class="claim bad"><span class="tag">Refuted by source</span>Money arrives within 24 hours, shipping refunded</div>
+        <div class="panel tight" style="margin-top:14px">
+          <p style="margin:0;font-size:13px"><strong>Verdict <span class="pill escalate">ESCALATE</span></strong><br>
+          <span class="mono" style="font-size:11.5px;color:var(--muted)">argmin BLOCK &#183; capped at ESCALATE &#183; 1 of 3 claims supported</span></p>
+        </div>
+      </div>
+    </div>
+    <p class="footnote">Real natural language inference against the source, not keyword matching. A score alone
+      tells a reviewer something is wrong somewhere in a paragraph. Naming the sentence is what makes it actionable.</p>
+  </section>
+
+  <!-- 9 BIAS + ABSTENTION -->
+  <section class="slide">
+    <div class="rail"><span>Two mechanisms the brief asks for by name</span><span class="n">09</span></div>
+    <div class="split">
+      <div>
+        <h2 style="font-size:26px">Bias, checked from outside the model</h2>
+        <p style="font-size:14px">Enterprises consume models through an API, so weights and activations are out of
+          reach and every representation-level fairness method is unavailable. Both of our detectors work from outside.</p>
+        <div class="panel red tight" style="margin-bottom:12px">
+          <p style="font-size:13px;margin:0 0 6px"><strong>"The applicant is a Muslim woman from a scheduled caste, so I recommend we decline the loan."</strong></p>
+          <p class="mono" style="font-size:11.5px;margin:0;color:var(--red)">religion &#183; gender &#183; caste, each beside a decision term</p>
+        </div>
+        <p style="font-size:13.5px;margin:0">Categories follow the Indian constitutional grounds, Articles 15 and 16, because the
+          policies declare jurisdiction IN. Caste and religion matter here in a way a US or EU list would miss.
+          Precision 0.71, so it can demand a human and can never silence the model alone.</p>
+      </div>
+      <div>
+        <h2 style="font-size:26px">Abstention, when nothing can be checked</h2>
+        <p style="font-size:14px">With no source to verify against, the detector reports <span class="mono">verifiable = false</span>
+          and the engine substitutes that workflow's prior <strong>rather than zero</strong>.</p>
+        <div class="panel tight" style="margin-bottom:12px">
+          <table style="font-size:13px">
+            <tbody>
+              <tr><td>Decision support</td><td class="r"><span class="pill constrain">CONSTRAIN</span></td></tr>
+              <tr><td>Support chatbot</td><td class="r"><span class="pill allow">ALLOW</span></td></tr>
+              <tr><td>Internal copilot</td><td class="r"><span class="pill allow">ALLOW</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="font-size:13.5px;margin:0">Identical input, no branching on workflow name. Not being able to check something
+          is not the same as it being fine, and a system that conflates the two fails silently.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 COMPOUNDING + AGENTIC -->
+  <section class="slide">
+    <div class="rail"><span>Multi-turn and agentic risk</span><span class="n">10</span></div>
+    <div class="split">
+      <div>
+        <h2 style="font-size:26px">Risk compounds across turns</h2>
+        <p style="font-size:14px">Per-turn probability is held constant. Nothing about any single turn gets riskier.
+          The action changes anyway, because risk allowed through at turn 2 contaminates the context turn 4 conditions on.</p>
+        <div class="scroll">
+          <table style="font-size:13px">
+            <thead><tr><th>Turn</th><th class="r">P per turn</th><th class="r">P effective</th><th class="r">Action</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td class="r">1.5%</td><td class="r">1.5%</td><td class="r"><span class="pill allow">ALLOW</span></td></tr>
+              <tr><td>2</td><td class="r">1.5%</td><td class="r">2.2%</td><td class="r"><span class="pill allow">ALLOW</span></td></tr>
+              <tr><td>3</td><td class="r">1.5%</td><td class="r">3.2%</td><td class="r"><span class="pill hold">HOLD</span></td></tr>
+              <tr><td>4</td><td class="r">1.5%</td><td class="r">3.7%</td><td class="r"><span class="pill hold">HOLD</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="footnote" style="margin-top:12px">Turn 3 crosses the 2.72% band on carried risk alone.</p>
+      </div>
+      <div>
+        <h2 style="font-size:26px">An agent step is worth what it can cause</h2>
+        <p style="font-size:14px">Identical sentence, identical risk vector. Only what the step can reach changes.</p>
+        <div class="scroll">
+          <table style="font-size:13px">
+            <thead><tr><th>Reachable</th><th class="r">C_eff</th><th class="r">Action</th></tr></thead>
+            <tbody>
+              <tr><td>Nothing, plain text</td><td class="r">&#8377;800</td><td class="r"><span class="pill allow">ALLOW</span></td></tr>
+              <tr><td>CRM note, close ticket</td><td class="r">&#8377;4,800</td><td class="r"><span class="pill hold">HOLD</span></td></tr>
+              <tr><td>Refund API</td><td class="r">&#8377;1,50,000</td><td class="r"><span class="pill escalate">ESCALATE</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="footnote" style="margin-top:12px">C_eff(step) = max over reachable tools of C &#215; P(reach) &#215; &#953;.
+          The risk of a reasoning step is not in its wording.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 THE GATE -->
+  <section class="slide" style="border-color:#D8B4B4">
+    <div class="rail"><span>Credibility / Screen 5</span><span class="n">11</span></div>
+    <h2>The system caught a flaw in its own detector and refused to go live</h2>
+    <p class="kicker">Every number the engine acts on is only as good as the probability behind it. A policy
+      may not move from advisory to enforcing until Expected Calibration Error is under 0.05. Measured on held-out data:</p>
+    <div class="split">
+      <div>
+        <div class="meter">
+          <div class="bar">
+            <div class="fill" style="width:73%"></div>
+            <div class="gate" style="left:50%"></div>
+          </div>
+          <div class="labels"><span>0</span><span>gate 0.050</span><span>0.100</span></div>
+        </div>
+        <div class="cols3" style="margin-top:20px">
+          <div class="stat red"><b>0.073</b><span>Held-out ECE, against a gate of 0.05</span></div>
+          <div class="stat red"><b>5.6&#215;</b><span>Overconfident. Reports 0.073 on traffic that is 0.013 defective</span></div>
+        </div>
+        <div class="ladder">
+          <div class="stg on"><b>Shadow</b><span>Logged, nothing executed</span></div>
+          <div class="stg on"><b>Advisory</b><span>Surfaced, not enforced</span></div>
+          <div class="stg off"><b>Enforcing</b><span>Blocked by the gate</span></div>
+        </div>
+      </div>
+      <div>
+        <h3>Correcting the probability, not the threshold</h3>
+        <div class="scroll">
+          <table style="font-size:13.5px">
+            <thead><tr><th></th><th class="r">Before</th><th class="r">After</th></tr></thead>
+            <tbody>
+              <tr><td>Held-out ECE</td><td class="r">0.073</td><td class="r" style="color:var(--green)">0.0005</td></tr>
+              <tr><td>Unnecessary interventions / 10k</td><td class="r">4,805</td><td class="r" style="color:var(--green)">114</td></tr>
+              <tr><td>Escaped defects / 10k</td><td class="r">0</td><td class="r">16</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="panel green tight" style="margin-top:14px">
+          <p style="margin:0;font-size:13.5px"><strong>98% of false alarms removed</strong> at the cost of one escaped
+          defect in 614. The thresholds never moved: moving them would break the consequence model that derives them.
+          The input was wrong, so the input was fixed.</p>
+        </div>
+      </div>
+    </div>
+    <p class="footnote">Most demos show a system working. This one shows a governance gate refusing an unsafe
+      rollout, using a number we measured on ourselves and did not like.</p>
+  </section>
+
+  <!-- 12 BUSINESS CASE -->
+  <section class="slide">
+    <div class="rail"><span>Business case</span><span class="n">12</span></div>
+    <h2>Forty-five times its running cost at the pessimistic end</h2>
+    <div class="split" style="margin-bottom:22px">
+      <div>
+        <h3>Cost, measured and extrapolated to 130k interactions</h3>
+        <div class="scroll">
+          <table style="font-size:13.5px">
+            <thead><tr><th></th><th class="r">Uncalibrated</th><th class="r">Calibrated</th></tr></thead>
+            <tbody>
+              <tr><td>Interventions per month</td><td class="r">64,155</td><td class="r">2,964</td></tr>
+              <tr><td>Human escalations</td><td class="r">642</td><td class="r">296</td></tr>
+              <tr><td>Intervention friction</td><td class="r">&#8377;5,22,863</td><td class="r">&#8377;57,798</td></tr>
+              <tr><td>Inference overhead</td><td class="r">&#8377;1,687</td><td class="r">&#8377;1,687</td></tr>
+              <tr class="tot"><td>Running cost</td><td class="r">&#8377;5,24,551</td><td class="r" style="color:var(--green)">&#8377;59,485</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="footnote" style="margin-top:12px">The dominant cost of a guardrail is not compute. It is the human
+          time false alarms consume, which is why calibration cuts running cost ninefold.</p>
+      </div>
+      <div>
+        <h3>Return against residual exposure</h3>
+        <div class="scroll">
+          <table style="font-size:13.5px">
+            <thead><tr><th>Catch rate</th><th class="r">Avoided / mo</th><th class="r">Ratio</th></tr></thead>
+            <tbody>
+              <tr><td>40%, pessimistic</td><td class="r">&#8377;27,19,152</td><td class="r"><strong>45.7&#215;</strong></td></tr>
+              <tr><td>60%, central</td><td class="r">&#8377;40,78,728</td><td class="r"><strong>68.6&#215;</strong></td></tr>
+              <tr><td>75%, optimistic</td><td class="r">&#8377;50,98,410</td><td class="r"><strong>85.7&#215;</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="panel tight" style="margin-top:14px">
+          <p style="margin:0;font-size:13.5px">We give a range, not a number. Catch rate is a property of the detectors,
+          and detector quality is exactly what we refuse to assert without measurement. Phase 0 exists to measure it.</p>
+        </div>
+      </div>
+    </div>
+    <div class="cols3">
+      <div class="stat"><b>102 ms</b><span>Added latency, p50. p99 is 552 ms</span></div>
+      <div class="stat"><b>3.2%</b><span>Of one generation, per decision</span></div>
+      <div class="stat brass"><b>&#8377;59,485</b><span>Monthly running cost, calibrated</span></div>
+    </div>
+  </section>
+
+  <!-- 13 ROADMAP -->
+  <section class="slide">
+    <div class="rail"><span>Deployment roadmap</span><span class="n">13</span></div>
+    <h2>Nothing enforces until it has earned the right to</h2>
+    <p class="kicker">Every phase has an exit criterion that is measured, not judged. <span class="chip">dates to confirm</span></p>
+    <div class="phases">
+      <div class="ph"><div class="no">0</div><div class="wk">Weeks 1 to 4</div><b>Shadow</b><span>Adjudicate everything, execute nothing. Measure real base rates and detector precision.</span><span class="exit">500+ labels per workflow</span></div>
+      <div class="ph"><div class="no">1</div><div class="wk">Weeks 5 to 10</div><b>Advisory</b><span>Surface actions to reviewers. Fit and validate calibration on held-out data.</span><span class="exit">Held-out ECE &lt; 0.05</span></div>
+      <div class="ph"><div class="no">2</div><div class="wk">Weeks 11 to 16</div><b>Enforce one</b><span>Highest-consequence workflow only. BLOCK stays off except for checksum-verified PII.</span><span class="exit">EDR and UIR in bounds, 4 weeks</span></div>
+      <div class="ph"><div class="no">3</div><div class="wk">Months 5 to 8</div><b>Fleet rollout</b><span>Each workflow gets its own policy, calibration and gate. Jurisdiction variants as the footprint grows.</span></div>
+      <div class="ph"><div class="no">4</div><div class="wk">Months 9 to 12</div><b>Agentic</b><span>Reachability adjudication against production tool graphs. Mechanism is built; this is integration.</span></div>
+    </div>
+    <div class="panel warm" style="margin-top:22px">
+      <p style="margin:0;font-size:13.5px"><strong>Phase 0 pays for itself even if the project stops there.</strong>
+      It produces the first honest measurement of AI exposure the organisation has ever had.</p>
+    </div>
+  </section>
+
+  <!-- 14 BUILT / NOT BUILT -->
+  <section class="slide">
+    <div class="rail"><span>Prototype status</span><span class="n">14</span></div>
+    <h2>What is built, what is scoped out, and what is missing</h2>
+    <p class="kicker">Stated plainly and on purpose. A reviewer who finds an unimplemented feature themselves
+      discounts everything else in the submission.</p>
+    <div class="built">
+      <div class="bcard y"><h4>Built and demonstrable</h4><p>Decision engine and derived thresholds. Precision caps. Abstention. Multi-turn compounding. Agentic reachability. Real NLI grounding that names the failing sentence. Protected-attribute and counterfactual bias detection. Tamper-evident ledger with concurrency-safe appends. Human adjudication loop. Applied calibration with a held-out gate. OpenAI-compatible proxy. Seven demo screens, 221 tests.</p></div>
+      <div class="bcard n"><h4>Deliberately out of scope</h4><p>Inline rewriting of responses. Representation-level detection, which API consumption puts out of reach and which is precisely why our bias detection is counterfactual. Streaming. Authentication and multi-tenancy. These are decisions, not oversights.</p></div>
+      <div class="bcard o"><h4>Not yet built</h4><p>Fail-open and fail-closed behaviour is validated but not consumed. No per-detector timeouts. Policy routing fractions declared but unused as gates. Tier 2 cost accounting understates self-consistency. Tier 1 and 2 judgement detectors are dial-controlled simulations, so detector quality stays a known quantity in the threshold measurements.</p></div>
+    </div>
+    <p class="footnote">Known limits of the entailment model are documented too: it cannot do arithmetic over dates,
+      it mishandles negation, and it marks elaboration as unsupported. That is why grounding carries 0.82 precision
+      and is never permitted to block on its own.</p>
+  </section>
+
+  <!-- 15 CLOSE -->
+  <section class="slide">
+    <div class="rail"><span>Why this wins</span><span class="n">15</span></div>
+    <h2>Most teams will build a better classifier. We built the layer above it.</h2>
+    <div class="split" style="margin-top:20px">
+      <div>
+        <p style="font-size:16px">Detection is hard and crowded, and a marginally better hallucination detector does not
+          change how an enterprise governs AI. ControlPlane treats detection as an input and answers the question above it:</p>
+        <div class="panel blue" style="margin:18px 0">
+          <p style="margin:0;font-size:16px;font-family:Spectral,Georgia,serif;line-height:1.45">
+            Given an imperfect signal, what is the right thing to do about it, in this workflow,
+            at this cost, with this quality of evidence?</p>
+        </div>
+        <p style="font-size:15px">That layer does not exist in the market, it is where the money actually is, and it keeps
+          working as detectors improve.</p>
+      </div>
+      <div>
+        <div class="panel green tight">
+          <h3 style="color:var(--green)">The single strongest piece of evidence</h3>
+          <p style="margin:0;font-size:14.5px">Our system measured its own detector, found it 5.6 times overconfident,
+          failed its own calibration gate, and <strong>refused to let itself enforce.</strong></p>
+        </div>
+        <div class="cols3" style="margin-top:18px;grid-template-columns:1fr 1fr">
+          <div class="stat green"><b>221</b><span>Tests, each screen asserting its own claim</span></div>
+          <div class="stat brass"><b>&#8377;8.2 cr</b><span>Annual exposure addressed</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="footnote">Every figure in this deck is reproducible: <span class="mono">pytest -q</span>,
+      <span class="mono">python -m sim.seed_data</span>, then <span class="mono">/v1/metrics</span> and
+      <span class="mono">/demo/screen5</span>. Measured rather than assumed: latency, inference overhead, tier fire
+      rates, intervention rates before and after calibration, ECE, and every derived action band.</p>
+  </section>
+
+</div>

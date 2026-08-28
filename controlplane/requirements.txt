@@ -19,3 +19,7 @@ torch>=2.0
 # Optional. Only needed to point Screen 0 at a live model; with no API key
 # configured the demo replays recorded responses and says so.
 openai>=1.40,<2
+
+# Reads .env.local so configuration does not have to live in shell exports.
+# Optional: without it every setting falls back to the real environment.
+python-dotenv>=1.0,<2

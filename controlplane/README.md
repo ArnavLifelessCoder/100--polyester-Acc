@@ -36,13 +36,20 @@ The first run downloads the NLI grounding model (~70MB) and caches it. To skip
 it and use the lexical fallback, set `CONTROLPLANE_DISABLE_NLI=1`.
 
 **Optional, for a live model.** Screen 0 replays recorded responses unless a
-provider is configured, and labels which it used either way:
+provider is configured, and labels which it used either way. Configure it in
+`.env.local`, which is gitignored:
 
 ```bash
-export CONTROLPLANE_API_KEY=sk-...       # or OPENAI_API_KEY
-export CONTROLPLANE_MODEL=gpt-4o-mini    # optional
-export CONTROLPLANE_BASE_URL=...         # optional, any OpenAI-compatible endpoint
+cp .env.example .env.local     # then paste a key into it
 ```
+
+Any OpenAI-compatible endpoint works. `.env.example` carries ready presets for
+OpenAI, OpenRouter, Groq, and a fully local Ollama. Anything already exported in
+your shell wins over the file, so a temporary override needs no edit.
+
+Check it took effect with `GET /demo/live/scenarios`, or look at the badge on
+Screen 0: it reads LIVE MODEL or RECORDED RESPONSE, never silently one while
+implying the other.
 
 ---
 
@@ -307,12 +314,15 @@ recording.
 controlplane/
 ├── constants.py                       # Annex assumption-tagged parameters (A1-A13, A6a)
 ├── requirements.txt
+├── .env.example                       # Config template, tracked, presets for four providers
+├── .env.local                         # Your keys, gitignored, created by you
 ├── controlplane.db                    # SQLite ledger, WAL mode
 ├── policies/
 │   ├── decision_support.yaml          # High consequence (INR 50,000, iota 0.9)
 │   ├── support_chatbot.yaml           # Medium consequence (INR 3,000, iota 0.6)
 │   └── internal_copilot.yaml          # Low consequence (INR 800, iota 0.2)
 ├── controlplane/
+│   ├── __init__.py                    # Loads .env.local before any module reads env
 │   ├── schemas.py                     # Pydantic v2 core models
 │   ├── policy.py                      # Loader, validation, immutable snapshots
 │   ├── cascade.py                     # Tier routing, latency and cost accounting
@@ -441,7 +451,18 @@ controlplane/
    identical in all three. Only what the step can reach changes, and that alone
    takes the response from ALLOW to a human review.
 
-7. **Cryptographic Audit Ledger**
+7. **Live Playground, bring your own data**
+   The free-form surface. Type any prompt and any candidate response, pick a
+   workflow, and adjudicate it. The source document can be pasted or loaded
+   from a local `.txt` or `.md` file; the file is read in the browser and never
+   uploaded, so a reviewer's own document stays off the server. Leave the source
+   empty to trigger the abstention path.
+
+   This runs the same engine as every other screen, with real NLI grounding, and
+   needs no model provider because the candidate response is supplied rather
+   than generated.
+
+8. **Cryptographic Audit Ledger**
    Immutable decision records with SHA-256 chaining and full evidence payloads.
    Verification recomputes each row hash from its stored content, so an edited
    decision is caught, not just a broken link.

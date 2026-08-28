@@ -24,6 +24,30 @@ from controlplane.detectors.nli import (
 )
 
 
+# Words carrying enough meaning to judge whether two sentences discuss the same
+# subject. Deliberately crude: this decides which passage may refute a claim,
+# not whether the claim is true.
+_STOPWORDS = frozenset(
+    "a an the is are was were be been being of to in on for with and or not no "
+    "it its this that these those as at by from will would may might can could "
+    "have has had do does did if then than so such within after before once "
+    "you your we our they their he she i".split()
+)
+
+# How much subject overlap a passage needs before it is allowed to refute.
+RELEVANCE_FLOOR = 0.25
+
+# A refuted claim counts fully; an unmentioned one counts far less.
+CONTRADICTION_WEIGHT = 1.0
+NEUTRAL_WEIGHT = 0.35
+
+
+def _content_tokens(text: str) -> set[str]:
+    return {
+        w.strip(".,;:!?()[]\"'") for w in text.lower().split()
+    } - _STOPWORDS - {""}
+
+
 class GroundingDetector:
     """
     Verify each claim in a response against the retrieved source.
@@ -81,7 +105,7 @@ class GroundingDetector:
         return [p.strip() for p in parts if p.strip()]
 
     @staticmethod
-    def _split_passages(context: str) -> list[str]:
+    def _split_passages(context: str, request: str = "") -> list[str]:
         """
         Context is checked passage by passage, taking the best match.
 
@@ -90,7 +114,22 @@ class GroundingDetector:
         """
         parts = re.split(r"(?<=[.!?])\s+|\n+", context.strip())
         passages = [p.strip() for p in parts if len(p.strip().split()) >= 3]
-        return passages or [context.strip()]
+        passages = passages or [context.strip()]
+
+        # The request is premise material too. A correct answer routinely
+        # restates a fact the user supplied ("the purchase was 40 days ago")
+        # and combines it with the source ("the window is 30 days"). Checked
+        # against policy passages alone, that sentence reads as unsupported,
+        # because the document never mentions this customer. Measured on that
+        # exact case, entailment rises from 0.012 to 0.467 once the question is
+        # available. The whole context is also kept as one passage, since a
+        # claim can need two policy sentences at once.
+        whole = context.strip()
+        if whole and whole not in passages:
+            passages.append(whole)
+        if request and request.strip():
+            passages.append((request.strip() + " " + whole).strip())
+        return passages
 
     def _abstain(self, reason: str, start: float) -> DetectorOutput:
         return DetectorOutput(
@@ -135,7 +174,7 @@ class GroundingDetector:
         if self.lexical_only:
             return self._lexical(sentences, ctx.retrieval_context, start)
 
-        passages = self._split_passages(ctx.retrieval_context)
+        passages = self._split_passages(ctx.retrieval_context, request)
         pairs = [(p, s) for s in sentences for p in passages]
         scored = entailment_scores(pairs)
 
@@ -148,9 +187,30 @@ class GroundingDetector:
 
         for i, sentence in enumerate(sentences):
             window = scored[i * len(passages):(i + 1) * len(passages)]
-            # Best supporting passage, and separately the most refuting one.
+            # Support may come from anywhere in the document.
             best = max(window, key=lambda r: r["entailment"])
-            worst = max(window, key=lambda r: r["contradiction"])
+
+            # Refutation may not. Taking the maximum contradiction across every
+            # passage means any long document containing an unrelated number
+            # manufactures a contradiction: "refunds are processed within five
+            # working days" scored 0.827 contradiction against "orders may be
+            # refunded within 30 days of delivery", two sentences about
+            # different things that merely disagree numerically.
+            #
+            # A refutation only counts from the passage actually discussing the
+            # same subject, so relevance is scored by token overlap first and
+            # the contradiction read from that passage alone.
+            claim_tokens = _content_tokens(sentence)
+            relevance = [
+                len(claim_tokens & _content_tokens(p)) / max(len(claim_tokens), 1)
+                for p in passages
+            ]
+            governing = max(range(len(passages)), key=lambda k: relevance[k])
+            worst = (
+                window[governing]
+                if relevance[governing] >= RELEVANCE_FLOOR
+                else {"contradiction": 0.0}
+            )
 
             is_supported = best["entailment"] >= self.ENTAILMENT_THRESHOLD
             is_contradicted = (
@@ -176,13 +236,20 @@ class GroundingDetector:
 
         n = len(sentences)
         g = supported / n
+        unsupported = n - supported - contradicted
 
-        # Ungrounded fraction, with refuted claims counted at full weight and
-        # merely unmentioned ones at the same rate. Contradiction additionally
-        # raises the floor: one clearly refuted claim is not a small problem
-        # just because the other nine sentences happened to check out.
-        p_hat = 1.0 - g
+        # A refuted claim and an unmentioned one are not the same failure and
+        # must not carry the same weight. Strict entailment marks any sentence
+        # that adds detail beyond the source as neutral, including ordinary
+        # helpful elaboration: "a refund is processed within five working days
+        # after it is approved" is neutral against a source that never
+        # mentions approval, though nothing in it is wrong. Weighting neutral
+        # the same as refuted made every correct answer read as fully
+        # defective.
+        p_hat = (CONTRADICTION_WEIGHT * contradicted + NEUTRAL_WEIGHT * unsupported) / n
         if contradicted:
+            # One clearly refuted claim is not a small problem just because the
+            # other nine sentences checked out.
             p_hat = max(p_hat, 0.5 + 0.5 * (contradicted / n))
 
         return DetectorOutput(

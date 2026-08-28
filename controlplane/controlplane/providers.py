@@ -32,6 +32,11 @@ _lock = threading.Lock()
 _client: Any = None
 _client_attempted = False
 _client_error: str | None = None
+# Last generation failure, so a misconfigured provider reports why instead of
+# surfacing as a bare 503. A key that constructs a client fine but is rejected
+# at call time is the common case: pointing a provider-specific key at the
+# default OpenAI endpoint returns 401 on the first request, not at setup.
+_last_call_error: str | None = None
 
 
 def _api_key() -> str | None:
@@ -49,6 +54,8 @@ def provider_status() -> dict[str, Any]:
         "model": DEFAULT_MODEL,
         "base_url": os.environ.get("CONTROLPLANE_BASE_URL"),
         "client_error": _client_error,
+        # Never the key itself, only the class and message of the failure.
+        "last_call_error": _last_call_error,
     }
 
 
@@ -108,11 +115,27 @@ def get_generator() -> Callable[[str], str] | None:
 
 
 def generate_or_none(prompt: str, system: str | None = None) -> str | None:
-    """Generate if a provider is configured, else None. Never raises."""
+    """
+    Generate if a provider is configured, else None. Never raises.
+
+    A failure is recorded rather than discarded. Swallowing it entirely meant a
+    provider-specific key pointed at the wrong endpoint produced an
+    indistinguishable "no provider" result, and the only way to find out was to
+    read the source.
+    """
+    global _last_call_error
+
     generator = get_generator()
     if generator is None:
         return None
     try:
-        return generator(prompt, system) if system else generator(prompt)
-    except Exception:  # noqa: BLE001
+        result = generator(prompt, system) if system else generator(prompt)
+        _last_call_error = None
+        return result
+    except Exception as exc:  # noqa: BLE001
+        message = str(exc)
+        key = _api_key()
+        if key:
+            message = message.replace(key, "<redacted>")
+        _last_call_error = f"{type(exc).__name__}: {message[:300]}"
         return None

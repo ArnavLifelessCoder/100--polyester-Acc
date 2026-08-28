@@ -43,3 +43,20 @@ if _SEEDED_DB.exists():
             shutil.copy2(sidecar, _test_db.with_name(_test_db.name + suffix))
 
 os.environ["CONTROLPLANE_DB"] = str(_test_db)
+
+# Force the recorded path for the whole suite.
+#
+# With a provider key present, /demo/live generates a fresh answer on every
+# call. That makes assertions about what the model said non-deterministic, and
+# it spends the developer's quota on every test run. Two bias tests failed for
+# exactly this reason once a key was configured: the live model declined to
+# produce the biased answer the recorded fixture contains, which is good
+# behaviour from the model and a broken test either way.
+#
+# Tests that specifically need a live provider should set this back themselves.
+# Set to empty rather than removed. load_dotenv(override=False) only skips a
+# variable that is already present, so deleting it would let .env.local put the
+# real key straight back. An empty value is present, so the file cannot
+# override it, and _api_key() reads empty as unconfigured.
+os.environ["CONTROLPLANE_API_KEY"] = ""
+os.environ["OPENAI_API_KEY"] = ""

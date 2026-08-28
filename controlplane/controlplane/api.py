@@ -68,6 +68,33 @@ app = FastAPI(
     version="0.1.0",
 )
 
+@app.on_event("startup")
+def _warm_detectors() -> None:
+    """
+    Load the entailment model before the first request rather than on it.
+
+    Lazy loading meant the first adjudication after a cold start raced the
+    model load, silently took the lexical fallback, and returned a different
+    verdict from every request after it. On the same input that is CONSTRAIN
+    against ESCALATE, which is exactly the kind of inconsistency that destroys
+    trust in a live demo.
+
+    Warming here costs a few seconds of startup once. A failure is not fatal:
+    the detector still degrades to the lexical path, reports
+    `method: lexical_overlap_fallback`, and carries its own lower precision.
+    """
+    from controlplane.detectors.nli import nli_status
+
+    status = nli_status()
+    if status["loaded"]:
+        print(f"[controlplane] entailment model ready: {status['model']}")
+    elif status["disabled"]:
+        print("[controlplane] NLI disabled, grounding will use lexical overlap")
+    else:
+        print(f"[controlplane] NLI unavailable ({status['error']}), "
+              "grounding will use lexical overlap at reduced precision")
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -633,12 +660,21 @@ def demo_live(body: LiveRequest):
         model_used = None
     else:
         # A custom question with no provider cannot be answered honestly.
-        raise HTTPException(
-            503,
-            "no model provider configured, so a custom question cannot be "
-            "answered. Set CONTROLPLANE_API_KEY, or use a prepared scenario "
-            "to see the recorded case.",
-        )
+        status = provider_status()
+        if status["configured"]:
+            detail = (
+                "A provider key is configured but the generation call failed, "
+                f"so a custom question cannot be answered. {status['last_call_error']}. "
+                "A provider-specific key usually also needs CONTROLPLANE_BASE_URL "
+                "and a CONTROLPLANE_MODEL that provider offers."
+            )
+        else:
+            detail = (
+                "No model provider is configured, so a custom question cannot "
+                "be answered. Set CONTROLPLANE_API_KEY in .env.local, or use a "
+                "prepared scenario to see the recorded case."
+            )
+        raise HTTPException(503, detail)
 
     ctx = DetectionContext(
         retrieval_context=retrieval_context,
@@ -993,7 +1029,7 @@ AGENTIC_TOOL_GRAPH: dict[str, dict[str, Any]] = {
         "label": "Write a note on the account",
     },
     "close_ticket": {
-        "consequence": 6000.0,
+        "consequence": 12000.0,
         "iota": 0.5,
         "p_reach": 0.8,
         "reachable_from": ["plan_note"],

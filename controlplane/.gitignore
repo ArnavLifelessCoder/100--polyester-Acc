@@ -34,3 +34,10 @@ yarn-error.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Secrets. .env.local holds real API keys and must never be committed.
+# .env.example is the documented template and is intentionally tracked.
+.env
+.env.local
+.env.*.local
+!.env.example

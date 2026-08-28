@@ -512,6 +512,25 @@ A `CAP_*` code appears only when the cap actually changed the action. Compare
 
 ## 7. Configuration
 
+Settings come from three places. Highest precedence first:
+
+1. **The real environment.** A shell export, a CI secret, or the test suite's
+   own override always wins, so a stray file on one laptop can never quietly
+   redirect a pipeline.
+2. **`.env.local`**, which holds real keys and is gitignored.
+3. **`.env`**, if the project ever adds shared non-secret defaults.
+
+```bash
+cp .env.example .env.local     # then paste a key into it
+```
+
+`.env.example` is tracked and carries ready presets for OpenAI, OpenRouter,
+Groq, and a fully local Ollama. `.env.local` is not tracked and never should be.
+Loading happens in `controlplane/__init__.py`, before any module reads
+`os.environ`, because `providers.py` and `detectors/nli.py` both resolve their
+configuration at import time. `python-dotenv` is optional: without it the files
+are skipped and everything falls back to the real environment.
+
 | Variable | Default | Effect |
 | :--- | :--- | :--- |
 | `CONTROLPLANE_API_KEY` / `OPENAI_API_KEY` | unset | Enables live generation on `/demo/live` and the counterfactual bias detector. Without it, recorded responses and abstention |
@@ -521,7 +540,42 @@ A `CAP_*` code appears only when the cap actually changed the action. Compare
 | `CONTROLPLANE_TIMEOUT_S` | `30` | Provider request timeout |
 | `CONTROLPLANE_NLI_MODEL` | `cross-encoder/nli-deberta-v3-xsmall` | Entailment model for grounding |
 | `CONTROLPLANE_DISABLE_NLI` | unset | Set to `1` to force the lexical grounding fallback. The fallback reports its own lower precision and flags `method: lexical_overlap_fallback` |
+| `CONTROLPLANE_DB` | `controlplane.db` | Ledger location. The test suite points this at a throwaway copy so runs never mutate the seeded database |
+
+An empty `CONTROLPLANE_API_KEY` reads as unconfigured, which is a valid working
+setup rather than a broken one. A placeholder string would be worse: the client
+would construct successfully and then fail with an auth error at demo time.
 
 Every model is optional. Nothing silently degrades: a detector that cannot run
 abstains, which routes through the workflow prior rather than reporting a clean
-result it did not establish.
+result it did not establish. The entailment model is loaded at startup rather
+than on first use, so the first request after a cold start cannot race it and
+quietly take the lexical path.
+
+Check what actually took effect with `GET /demo/live/scenarios`, which reports
+both the provider and the NLI model status:
+
+```json
+{
+  "configured": true,
+  "model": "gpt-oss-120b",
+  "base_url": "https://api.cerebras.ai/v1",
+  "client_error": null,
+  "last_call_error": "APIStatusError: Error code: 402 - payment required"
+}
+```
+
+`configured` only means a key is present. `client_error` covers setup failures,
+and `last_call_error` covers the far more common case of a key that constructs a
+client fine and is then rejected on the first request. The three failures worth
+recognising:
+
+| Symptom | Cause |
+| :--- | :--- |
+| `AuthenticationError: 401` | A provider-specific key sent to the default OpenAI endpoint. Set `CONTROLPLANE_BASE_URL` |
+| `NotFoundError: 404 model_not_found` | The model is not on your account. List what is with `client.models.list()` |
+| `APIStatusError: 402` | The key and endpoint are right; the account has no quota |
+
+Errors are recorded with the API key redacted. When generation fails,
+`/demo/live` returns 503 and names the failure rather than quietly serving a
+recorded answer to a question the user typed.

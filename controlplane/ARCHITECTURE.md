@@ -236,10 +236,55 @@ distinction is preserved through to the ledger:
 | `contradicted` | The source **refutes** it | raises the floor on $\hat{p}$ for the whole response |
 | `unsupported` | The source is silent | counts as ungrounded |
 
-$\hat{p} = 1 - G$ where $G$ is the supported fraction, then raised to at least
-$0.5 + 0.5 \cdot (\text{contradicted} / n)$ when any claim is refuted. One
-clearly refuted claim is not a small problem because the other nine sentences
-happened to check out.
+A refuted claim and an unmentioned one are weighted differently, at 1.0 and
+0.35, and the score is raised to at least $0.5 + 0.5 \cdot (\text{contradicted} / n)$
+when any claim is refuted. One clearly refuted claim is not a small problem
+because the other nine sentences happened to check out.
+
+Three properties of the scoring exist because the naive version was wrong, and
+each was found by running a live model against it rather than by reasoning.
+
+**Refutation is read only from a relevant passage.** Taking the maximum
+contradiction across every passage manufactures one on any long document. The
+claim "a refund is processed within five working days" scored 0.827
+contradiction against "orders may be refunded within 30 days of delivery", two
+sentences about different things that merely disagree numerically. Contradiction
+is now read from the passage with the highest content-word overlap with the
+claim, and only when that overlap clears a floor.
+
+**Neutral is not treated as refuted.** Strict entailment marks any sentence
+adding detail beyond the source as neutral, including ordinary helpful
+elaboration. "A refund is processed within five working days after it is
+approved" is neutral against a source that never mentions approval, though
+nothing in it is wrong. Weighting neutral like refutation made every correct
+answer read as fully defective.
+
+**The request is premise material.** A correct answer routinely restates a fact
+the user supplied and combines it with the source. Checked against policy
+passages alone, "the purchase was 40 days ago, which exceeds the 30 day window"
+reads as unsupported because the document never mentions this customer. Adding
+the question as premise raised entailment on that claim from 0.012 to 0.467.
+
+#### Known limits
+
+Measured against a live model, not assumed. This detector reliably catches
+fabricated specifics, invented timeframes, and invented entitlements. It is
+unreliable on three things:
+
+- **Arithmetic and temporal reasoning.** It cannot conclude that 40 days exceeds
+  a 30 day window, and it scored "yes, they are eligible" as entailed by a
+  policy that in fact excludes that customer.
+- **Negation.** "Refunds are issued only to the original payment method, not as
+  store credit" reads as contradicting a source that states exactly the first
+  half of it.
+- **Elaboration.** Any detail beyond the source is neutral by construction, so a
+  helpful answer scores lower than a terse one.
+
+This is why grounding carries a measured precision of 0.82 rather than something
+higher, and why the severity ladder lets it demand a human but never silence the
+model on its own. A larger entailment model would move these numbers. The
+architecture around it would not change, which is the point: detector quality is
+an input to this system, not its thesis.
 
 The evidence names the offending sentence. A score alone tells a reviewer that
 something is wrong somewhere in a paragraph, which is not actionable.
@@ -465,6 +510,13 @@ workflow's prior (never zero), records `ABSTAIN_<TAG>`, and caps severity at
 `CONSTRAIN`. This covers all of: no retrieval context, NLI model unavailable,
 counterfactual variants ungeneratable, and LLM judge parse failure.
 
+**Detectors are warmed at startup.** The entailment model is loaded on the
+startup event rather than on first use. Lazy loading meant the first
+adjudication after a cold start raced the load, silently took the lexical
+fallback, and returned a different verdict from every request after it. On one
+observed input that was CONSTRAIN against ESCALATE. Warming costs a few seconds
+of startup once, and a load failure is still not fatal.
+
 **Degraded methods declare themselves.** When the NLI model is unavailable,
 grounding falls back to lexical overlap, reports
 `method: lexical_overlap_fallback`, and carries its own lower precision (0.65
@@ -476,7 +528,16 @@ cannot fork the chain. See 5.2.
 
 **Provider absence.** With no API key, `/demo/live` replays a recorded response
 and labels it `source: "recorded"`. A custom typed question returns **503**
-rather than being answered from a recording.
+rather than being answered from a recording. An empty key reads as unconfigured,
+which is a valid setup; a placeholder string would be worse, because the client
+would construct and then fail with an auth error at demo time.
+
+**Configuration precedence.** Real environment, then `.env.local`, then `.env`.
+Files are loaded in `controlplane/__init__.py` before any module reads
+`os.environ`, since `providers.py` and `detectors/nli.py` both resolve their
+configuration at import. Loading uses `override=False`, so an export or a test
+fixture always beats a file on disk. That is what stops a developer's
+`.env.local` from redirecting the test suite at the seeded ledger.
 
 ### 7.2 Not implemented
 
