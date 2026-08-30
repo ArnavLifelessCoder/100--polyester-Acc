@@ -1,12 +1,88 @@
 import React, { useState, useEffect } from 'react';
 import { ToggleLeft, ToggleRight, CheckCircle2, ShieldAlert } from 'lucide-react';
 
+interface DetectorSignal {
+  p_hat: number;
+  detector_id: string;
+  measured_precision: number;
+  verifiable: boolean;
+  tier: number;
+}
+
 interface AbstentionDemoData {
   action: string;
   p_def: number;
+  unconstrained_action: string;
+  severity_cap: string;
+  cap_reason: string | null;
+  cap_binds: boolean;
   reason_codes: string[];
   unverifiable_tags: string[];
+  prior_substituted: Record<string, number>;
+  risk_vector: Record<string, DetectorSignal>;
 }
+
+/**
+ * Reads every figure off the adjudication payload.
+ *
+ * These rows used to be hardcoded strings that drifted from the engine: they
+ * claimed P_def = 0.0000 where the cascade returned 0.0022, and a BLOCK cap
+ * where the grounding detector's precision only supports ESCALATE. A demo
+ * screen that prints numbers the engine did not produce is worse than one that
+ * prints nothing, so everything below is bound to the response.
+ */
+const MetricRows: React.FC<{ pane: AbstentionDemoData | null }> = ({ pane }) => {
+  if (!pane) {
+    return (
+      <div className="space-y-2 text-xs font-mono">
+        <div className="py-1 text-stone-400">Evaluating...</div>
+      </div>
+    );
+  }
+
+  const grounding = pane.risk_vector?.performance;
+  const abstainedTag = pane.unverifiable_tags?.[0];
+  const prior = abstainedTag ? pane.prior_substituted?.[abstainedTag] : undefined;
+
+  return (
+    <div className="space-y-2 text-xs font-mono">
+      <div className="flex justify-between py-1 border-b border-stone-100">
+        <span className="text-stone-600 font-sans text-[11px]">Detector Signal:</span>
+        <span className="text-stone-900 font-semibold">
+          {grounding
+            ? `p̂ = ${grounding.p_hat.toFixed(2)} (verifiable = ${grounding.verifiable})`
+            : 'no grounding detector'}
+        </span>
+      </div>
+      <div className="flex justify-between py-1 border-b border-stone-100">
+        <span className="text-stone-600 font-sans text-[11px]">
+          {prior !== undefined ? 'Substituted Probability:' : 'Composite Probability:'}
+        </span>
+        <span className="text-stone-900 font-semibold">
+          {`P_def = ${pane.p_def.toFixed(4)}`}
+          {prior !== undefined && (
+            <span className="text-amber-800"> {`(prior π_w = ${prior})`}</span>
+          )}
+        </span>
+      </div>
+      <div className="flex justify-between py-1 border-b border-stone-100">
+        <span className="text-stone-600 font-sans text-[11px]">Severity Cap:</span>
+        <span className="text-stone-800 font-medium">
+          {pane.severity_cap}
+          {pane.cap_reason ? ` (${pane.cap_reason})` : ''}
+        </span>
+      </div>
+      {pane.cap_binds && (
+        <div className="flex justify-between py-1 border-b border-stone-100">
+          <span className="text-stone-600 font-sans text-[11px]">Cap Binds:</span>
+          <span className="text-amber-800 font-semibold">
+            {`wanted ${pane.unconstrained_action}, capped to ${pane.action}`}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ACTION_PILL_STYLES: Record<string, string> = {
   ALLOW: 'pill-allow',
@@ -123,26 +199,7 @@ export const Screen3Abstention: React.FC = () => {
               </span>
             </div>
 
-            <div className="space-y-2 text-xs font-mono">
-              <div className="flex justify-between py-1 border-b border-stone-100">
-                <span className="text-stone-600 font-sans text-[11px]">Detector Signal:</span>
-                <span className="text-stone-900 font-semibold">
-                  {hasContext ? 'p̂ = 0.00 (verifiable = true)' : 'p̂ = 0.00 (verifiable = false)'}
-                </span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-stone-100">
-                <span className="text-stone-600 font-sans text-[11px]">Substituted Probability:</span>
-                <span className="text-stone-900 font-semibold">
-                  {hasContext ? 'P_def = 0.0000' : 'P_def = 0.0090 (prior π_w)'}
-                </span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-stone-100">
-                <span className="text-stone-600 font-sans text-[11px]">Severity Cap:</span>
-                <span className="text-stone-800 font-medium">
-                  {hasContext ? 'BLOCK (precision > 0.95)' : 'CONSTRAIN (unverifiable cap)'}
-                </span>
-              </div>
-            </div>
+            <MetricRows pane={dsVerdict} />
 
             {/* Reason Codes */}
             {dsVerdict && (
@@ -181,26 +238,7 @@ export const Screen3Abstention: React.FC = () => {
               </span>
             </div>
 
-            <div className="space-y-2 text-xs font-mono">
-              <div className="flex justify-between py-1 border-b border-stone-100">
-                <span className="text-stone-600 font-sans text-[11px]">Detector Signal:</span>
-                <span className="text-stone-900 font-semibold">
-                  {hasContext ? 'p̂ = 0.00 (verifiable = true)' : 'p̂ = 0.00 (verifiable = false)'}
-                </span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-stone-100">
-                <span className="text-stone-600 font-sans text-[11px]">Substituted Probability:</span>
-                <span className="text-stone-900 font-semibold">
-                  {hasContext ? 'P_def = 0.0000' : 'P_def = 0.0180 (prior π_w)'}
-                </span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-stone-100">
-                <span className="text-stone-600 font-sans text-[11px]">Severity Cap:</span>
-                <span className="text-stone-800 font-medium">
-                  {hasContext ? 'BLOCK (precision > 0.95)' : 'CONSTRAIN (unverifiable cap)'}
-                </span>
-              </div>
-            </div>
+            <MetricRows pane={cpVerdict} />
 
             {/* Reason Codes */}
             {cpVerdict && (
