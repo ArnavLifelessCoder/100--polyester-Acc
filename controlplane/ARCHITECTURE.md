@@ -181,9 +181,26 @@ An expected loss formula will aggressively choose BLOCK if consequence $C_{\text
 | $0.40 \le Pr < 0.70$ | **CONSTRAIN** | `low_precision` |
 | $Pr < 0.40$ | **HOLD** (Log and soft review) | `low_precision` |
 
-Final action is computed as:
+The cap defines a **feasible set**, not a clamp. The final action is the argmin
+re-taken over only the actions the cap permits:
 
-$$\text{Action} = \min(a_{\text{unconstrained}}, \, \text{SeverityCap})$$
+$$\mathcal{A}_{\text{permitted}} = \{\, a \in \mathcal{A} : \text{sev}(a) \le \text{sev}(\text{SeverityCap}) \,\}$$
+
+$$\text{Action} = \arg\min_{a \in \mathcal{A}_{\text{permitted}}} L(a)$$
+
+Ties again resolve to the lower severity.
+
+Clamping instead, as $\min(a_{\text{unconstrained}}, \, \text{SeverityCap})$,
+walks the unconstrained winner down the ladder one rung at a time and can stop
+on an action costing more than another the cap also allows. This is not
+hypothetical. Under `internal_copilot`, where $C = 800$ and escalation friction
+is comparatively expensive, a grounded contradiction produced
+$L(\text{ESCALATE}) = 136$ against $L(\text{CONSTRAIN}) = 63$. BLOCK won
+unconstrained, the precision cap was ESCALATE, and the clamp returned the
+costlier of the two permitted actions. The constrained argmin returns CONSTRAIN.
+
+The two formulations agree wherever the loss ordering follows the severity
+ladder, which is why the discrepancy stays invisible under `decision_support`.
 
 ---
 

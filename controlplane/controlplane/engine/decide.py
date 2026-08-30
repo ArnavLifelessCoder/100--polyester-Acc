@@ -12,7 +12,7 @@ Flow:
   5. L(a) for each action
   6. Unconstrained argmin (ties to lower severity)
   7. Severity cap from driving tag's precision
-  8. Apply cap
+  8. Constrained argmin over the permitted set
   9. Update session state
   10. Mark shadow if not enforcing
 """
@@ -41,7 +41,6 @@ from controlplane.engine.severity import (
     SEVERITY_ORDER,
     severity_index,
     severity_max,
-    cap_action,
 )
 
 
@@ -183,8 +182,20 @@ def decide(
                 cap = tag_cap
                 cap_reason = tag_cap_reason
 
-    # ---- 8. Apply cap ----
-    action = cap_action(unconstrained, cap)
+    # ---- 8. Constrained argmin over the permitted set ----
+    # The cap defines a feasible set, not a clamp. Walking the unconstrained
+    # winner down the ladder with min(unc_idx, cap_idx) can land on an action
+    # that costs more than another the cap also permits: under internal_copilot
+    # an ESCALATE at 136 was selected over a CONSTRAIN at 63 because BLOCK won
+    # unconstrained and ESCALATE was the next rung down. Re-minimising over the
+    # feasible set is what section 3.1 says the engine does, and the two agree
+    # wherever the loss ordering happens to follow the severity ladder.
+    cap_idx = severity_index(cap)
+    feasible = [a for a in ACTIONS if severity_index(a) <= cap_idx]
+    feasible_min = min(losses[a] for a in feasible)
+    feasible_candidates = [a for a in feasible if losses[a] == feasible_min]
+    action = min(feasible_candidates, key=severity_index)
+
     if action != unconstrained:
         reason_codes.append(f"CAP_{cap_reason.upper()}" if cap_reason else "CAP_APPLIED")
 
